@@ -10,11 +10,26 @@ class MoviesController < ApplicationController
     # will render app/views/movies/show.<extension> by default
   end
 
+ # def index
+   # @movies = Movie.all
+    #@movies = Movie.order(params[:sort_by])
+    #@selected = params[:sort_by]
+  #end
+  
   def index
-    @movies = Movie.all
-    @movies = Movie.order(params[:sort_by])
-    @selected = params[:sort_by]
+      @all_ratings = ['G', 'PG', 'PG-13', 'R']
+       @movies = Movie.all
+       unless params[:selected]==nil || !(Movie.column_names.include? params[:selected].to_s)
+       @selected = params[:selected].to_sym
+       @movies = Movie.all.order(@selected)
+       end
+      @selected_ratings= []
+      params[:ratings].each {|k,v| @selected_ratings << k} unless  params[:ratings] == nil
+      @movies.where!('rating IN (?)', @selected_ratings)
+      
+
   end
+  
 
   def new
     # default: render 'new' template
