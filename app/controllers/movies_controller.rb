@@ -1,5 +1,5 @@
 class MoviesController < ApplicationController
-
+  
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date)
   end
@@ -9,25 +9,30 @@ class MoviesController < ApplicationController
     @movie = Movie.find(id) # look up movie by unique ID
     # will render app/views/movies/show.<extension> by default
   end
-
- # def index
-   # @movies = Movie.all
-    #@movies = Movie.order(params[:sort_by])
-    #@selected = params[:sort_by]
-  #end
   
   def index
-      @all_ratings = ['G', 'PG', 'PG-13', 'R']
-       @movies = Movie.all
-       unless params[:selected]==nil || !(Movie.column_names.include? params[:selected].to_s)
-       @selected = params[:selected].to_sym
-       @movies = Movie.all.order(@selected)
-       end
-      @selected_ratings= []
-      params[:ratings].each {|k,v| @selected_ratings << k} unless  params[:ratings] == nil
-      @movies.where!('rating IN (?)', @selected_ratings)
-      
-
+     
+    sort = params[:sort] || session[:sort]
+    case sort
+    when 'title'
+      ordering,@title_header = {:title => :asc}, 'hilite'
+    when 'release_date'
+      ordering,@date_header = {:release_date => :asc}, 'hilite'
+    end
+    @all_ratings = Movie.all_ratings
+    @selected_ratings = params[:ratings] || session[:ratings] || {}
+    
+    if @selected_ratings == {}
+      @selected_ratings = Hash[@all_ratings.map {|rating| [rating, rating]}]
+    end
+    
+    if params[:sort] != session[:sort] or params[:ratings] != session[:ratings]
+      session[:sort] = sort
+      session[:ratings] = @selected_ratings
+      redirect_to :sort => sort, :ratings => @selected_ratings and return
+    end
+    @movies = Movie.where(rating: @selected_ratings.keys).order(ordering)
+       
   end
   
 
